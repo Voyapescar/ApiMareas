@@ -1,12 +1,9 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-// El caché sigue siendo una buena idea.
 const cache = {};
 
-// Esta es la forma nativa en que Vercel maneja las funciones serverless.
 module.exports = async (req, res) => {
-    // 1. Solo permitir peticiones GET
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -20,16 +17,19 @@ module.exports = async (req, res) => {
     const cacheKey = `${puerto}-${hoy}`;
 
     if (cache[cacheKey]) {
-        console.log(`[Cache] Devolviendo datos para ${puerto}`);
         return res.status(200).json(cache[cacheKey]);
     }
 
     try {
         const SHOA_URL = `https://www.shoa.cl/nuestros-servicios/tablas-de-marea/${puerto}`;
         
-        const { data: html } = await axios.get(SHOA_URL, {
-            headers: { 'User-Agent': 'MiAppDePesca/1.0' }
-        });
+        // ¡ESTE ES EL CAMBIO IMPORTANTE!
+        // Usamos un User-Agent que simula ser un navegador Chrome en Windows.
+        const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+        };
+        
+        const { data: html } = await axios.get(SHOA_URL, { headers });
 
         const $ = cheerio.load(html);
         const mareas = [];
@@ -56,13 +56,12 @@ module.exports = async (req, res) => {
 
         const respuesta = { fuente: 'SHOA', puerto, fecha: hoy, mareas };
         cache[cacheKey] = respuesta;
-        console.log(`[API] Nuevos datos para ${puerto} guardados en caché.`);
-
-        // Enviamos la respuesta exitosa
+        
         return res.status(200).json(respuesta);
 
     } catch (error) {
-        console.error(error.message);
+        // En Vercel, podemos ver los logs de este console.error para más detalles.
+        console.error(error); 
         return res.status(500).json({ error: 'No se pudieron obtener los datos de las mareas.', detalle: error.message });
     }
 };
