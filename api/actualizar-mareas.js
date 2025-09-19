@@ -1,3 +1,4 @@
+//forzando el comit
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import axios from 'axios';
@@ -44,4 +45,4 @@ export default async function handler(req, res) {
     console.error("Error en el trabajo programado:", error.response ? error.response.data : error.message);
     res.status(500).send('Ocurrió un error durante la actualización de mareas.');
   }
-}
+} //asdasd
